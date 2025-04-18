@@ -1,0 +1,42 @@
+﻿@model InternalChatbox.Models.User
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+<h2>Register</h2>
+
+<form asp-action="Register" method="post">
+    <div>
+        <label asp-for="Name"></label>
+        <input asp-for="Name" required />
+    </div>
+
+    <div>
+        <label asp-for="Designation"></label>
+        <input asp-for="Designation" />
+    </div>
+
+    <div>
+        <label asp-for="Location"></label>
+        <input asp-for="Location" />
+    </div>
+
+    <div>
+        <label asp-for="Email"></label>
+        <input asp-for="Email" type="email" required />
+    </div>
+
+    <div>
+        <label>Password</label>
+        <input name="password" type="password" required />
+    </div>
+
+    <button type="submit">Register</button>
+</form>
+
+<div style="color:red">
+    @Html.ValidationSummary()
+</div>
+
+<a asp-action="Login">Already have an account? Login</a>

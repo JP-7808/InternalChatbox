@@ -1,0 +1,120 @@
+﻿@model InternalChatbox.Models.ChatGroup
+@{
+    ViewData["Title"] = "Edit Group";
+    var nonMembers = ViewBag.NonMembers as List<InternalChatbox.Models.User>;
+    var currentUserId = ViewBag.CurrentUserId;
+}
+
+<h2>Edit Group: @Model.GroupName</h2>
+
+<form id="editGroupForm" method="post">
+    <input type="hidden" name="groupId" value="@Model.Id" />
+
+    <div class="mb-3">
+        <label class="form-label">Group Name</label>
+        <input type="text" class="form-control" id="groupName" name="groupName" value="@Model.GroupName" required />
+    </div>
+
+    <div class="mb-3">
+        <h4>Current Members</h4>
+        <ul class="list-group" id="currentMembers">
+            @foreach (var member in Model.Members)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    @member.User.Name (@member.User.Designation)
+                    @if (member.IsAdmin)
+                    {
+                        <span class="badge bg-primary">Admin</span>
+                    }
+                    @if (member.UserId != currentUserId) // Don't allow removing yourself
+                    {
+                        <button type="button" class="btn btn-sm btn-danger remove-member"
+                                data-userid="@member.UserId" data-groupid="@Model.Id">
+                            Remove
+                        </button>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+
+    <div class="mb-3">
+        <h4>Add New Members</h4>
+        <select multiple class="form-select" id="newMembers" name="newMembers">
+            @foreach (var user in nonMembers)
+            {
+                <option value="@user.Id">@user.Name (@user.Designation)</option>
+            }
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Handle form submission
+            $('#editGroupForm').submit(function(e) {
+                e.preventDefault();
+
+                const groupId = $('input[name="groupId"]').val();
+                const groupName = $('#groupName').val();
+                const newMembers = $('#newMembers').val() || []; // Get selected user IDs
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('groupId', groupId);
+                formData.append('groupName', groupName);
+                newMembers.forEach(memberId => {
+                    formData.append('newMembers', memberId);
+                });
+
+                // Send to server
+                fetch('/Chat/UpdateGroup', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = '/Chat/Index';
+                    } else {
+                        alert('Error updating group');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating group');
+                });
+            });
+
+            // Handle member removal
+            $('.remove-member').click(function() {
+                const userId = $(this).data('userid');
+                const groupId = $(this).data('groupid');
+
+                if (confirm('Are you sure you want to remove this member?')) {
+                    fetch('/Chat/RemoveGroupMember', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ userId, groupId })
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert('Error removing member');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error removing member');
+                    });
+                }
+            });
+        });
+    </script>
+}
